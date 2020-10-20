@@ -6,7 +6,8 @@ var path = require('path');
 var sanitizeHtml = require('sanitize-html');
 var qs = require('querystring');
 var bodyParser = require('body-parser')
-var compression = require('compression')
+var compression = require('compression');
+const { request } = require('express');
 
 
 app.use(express.static('public'));
@@ -41,10 +42,16 @@ app.get('/', function (request, response) {
   
 })
 
-app.get('/page/:pageId', function (request, response) {
-
+app.get('/page/:pageId', function (request, response,next) {
+    
     var filteredId = path.parse(request.params.pageId).base;
     fs.readFile(`data/${filteredId}`, 'utf8', function (err, description) {
+      if(err){
+        next(err);
+        // next('route') 사용시 아래 error catch code 동작
+      }
+      else{
+        
       var title = request.params.pageId;
       var sanitizedTitle = sanitizeHtml(title);
       var sanitizedDescription = sanitizeHtml(description, {
@@ -61,6 +68,8 @@ app.get('/page/:pageId', function (request, response) {
           </form>`
       );
       response.send(html)
+      }
+      
     });
 });
 
@@ -102,28 +111,35 @@ app.post('/create_process', function (request, response) {
   })
 })
 
-app.get('/update/:pageId', function (request, response) {
+app.get('/update/:pageId', function (request, response, next) {
     var filteredId = path.parse(request.params.pageId).base;
     fs.readFile(`data/${filteredId}`, 'utf8', function (err, description) {
-      var title = request.params.pageId;
-      var list = template.list(request.list);
-      var html = template.HTML(title, list,
-        `
-      <form action="/update_process" method="post">
-        <input type="hidden" name="id" value="${title}">
-        <p><input type="text" name="title" placeholder="title" value="${title}"></p>
-        <p>
-          <textarea name="description" placeholder="description">${description}</textarea>
-        </p>
-        <p>
-          <input type="submit">
-        </p>
-      </form>
-      `,
-        `<a href="/create">create</a> <a href="/update/${title}">update</a>`
-      );
-      response.send(html)
+      if(err){
+        next(err);
+      }
+      else{
+        var title = request.params.pageId;
+        var list = template.list(request.list);
+        var html = template.HTML(title, list,
+          `
+        <form action="/update_process" method="post">
+          <input type="hidden" name="id" value="${title}">
+          <p><input type="text" name="title" placeholder="title" value="${title}"></p>
+          <p>
+            <textarea name="description" placeholder="description">${description}</textarea>
+          </p>
+          <p>
+            <input type="submit">
+          </p>
+        </form>
+        `,
+          `<a href="/create">create</a> <a href="/update/${title}">update</a>`
+        );
+        response.send(html)
+     
+      }
     });
+      
   
 });
 
@@ -154,6 +170,16 @@ app.post('/delete_process', function (request, response) {
     response.redirect('/');
   })
 })
+
+app.use(function(req,res,next){
+  res.status(404).send('Sorry cant find that!');
+});
+app.use(function(err, req,res,next){
+  // 4개의 인자를 가진 함수는 express에서 error를 핸들링하는 함수로 약속되어 있음.
+  res.status(500).send('Something broke!');
+});
+
+
 
 app.listen(3000, function () {
   console.log('Example app listening on port 3000');
