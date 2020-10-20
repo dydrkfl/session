@@ -9,14 +9,15 @@ var bodyParser = require('body-parser')
 var compression = require('compression')
 
 
-
+app.use(express.static('public'));
+// public폴더 내에서 static파일을 찾겠다.
 app.use(bodyParser.urlencoded({
   extended: false
 }))
 app.use(compression());
 app.get('*',function (request, response, next) {
   // * : 모든요청 / 만약 그냥 app.use로 썼다면 post 방식에 대해서도 작동하므로 비효율적임.
-  
+
   fs.readdir('./data', function (error, filelist) {
     request.list = filelist;
     next();
@@ -31,7 +32,9 @@ app.get('/', function (request, response) {
     var description = 'Hello, Node.js';
     var list = template.list(request.list)
     var html = template.HTML(title, list,
-      `<h2>${title}</h2>${description}`,
+      `<h2>${title}</h2>${description}
+      <img src= "images/hello.jpg" style="width: 300px; display: block; margin-top: 10px;">
+      `,
       `<a href="/create">create</a>`
     );
     response.send(html);
