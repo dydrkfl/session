@@ -10,27 +10,36 @@ var compression = require('compression')
 
 
 
-app.use(bodyParser.urlencoded({ extended: false }))
-
+app.use(bodyParser.urlencoded({
+  extended: false
+}))
 app.use(compression());
-
-
-
-app.get('/', function (request, response) {
+app.get('*',function (request, response, next) {
+  // * : 모든요청 / 만약 그냥 app.use로 썼다면 post 방식에 대해서도 작동하므로 비효율적임.
+  
   fs.readdir('./data', function (error, filelist) {
+    request.list = filelist;
+    next();
+
+
+  });
+
+})
+app.get('/', function (request, response) {
+
     var title = 'Welcome';
     var description = 'Hello, Node.js';
-    var list = template.list(filelist)
+    var list = template.list(request.list)
     var html = template.HTML(title, list,
       `<h2>${title}</h2>${description}`,
       `<a href="/create">create</a>`
     );
     response.send(html);
-  });
+  
 })
 
 app.get('/page/:pageId', function (request, response) {
-  fs.readdir('./data', function (error, filelist) {
+
     var filteredId = path.parse(request.params.pageId).base;
     fs.readFile(`data/${filteredId}`, 'utf8', function (err, description) {
       var title = request.params.pageId;
@@ -38,7 +47,7 @@ app.get('/page/:pageId', function (request, response) {
       var sanitizedDescription = sanitizeHtml(description, {
         allowedTags: ['h1']
       });
-      var list = template.list(filelist);
+      var list = template.list(request.list);
       var html = template.HTML(sanitizedTitle, list,
         `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
         ` <a href="/create">create</a>
@@ -50,13 +59,11 @@ app.get('/page/:pageId', function (request, response) {
       );
       response.send(html)
     });
-  });
 });
 
 app.get('/create', function (request, response) {
-  fs.readdir('./data', function (error, filelist) {
     var title = 'WEB - create';
-    var list = template.list(filelist);
+    var list = template.list(request.list);
     var html = template.HTML(title, list, `
       <form action="/create_process" method="post">
         <p><input type="text" name="title" placeholder="title"></p>
@@ -69,7 +76,7 @@ app.get('/create', function (request, response) {
       </form>
     `, '');
     response.send(html);
-  });
+  
 });
 app.post('/create_process', function (request, response) {
   // var body = '';
@@ -93,11 +100,10 @@ app.post('/create_process', function (request, response) {
 })
 
 app.get('/update/:pageId', function (request, response) {
-  fs.readdir('./data', function (error, filelist) {
     var filteredId = path.parse(request.params.pageId).base;
     fs.readFile(`data/${filteredId}`, 'utf8', function (err, description) {
       var title = request.params.pageId;
-      var list = template.list(filelist);
+      var list = template.list(request.list);
       var html = template.HTML(title, list,
         `
       <form action="/update_process" method="post">
@@ -115,35 +121,35 @@ app.get('/update/:pageId', function (request, response) {
       );
       response.send(html)
     });
-  });
+  
 });
 
 app.post('/update_process', function (request, response) {
-  
-    var post = request.body;
-    var id = post.id;
-    var title = post.title;
-    var description = post.description;
-    console.log(id)
-    console.log(title)
-    console.log(description)
-    fs.rename(`data/${id}`, `data/${title}`, function (error) {
-      fs.writeFile(`data/${title}`, description, 'utf8', function (err) {
-       response.redirect(`/page/${title}`);
-      })
-    });
-  
+
+  var post = request.body;
+  var id = post.id;
+  var title = post.title;
+  var description = post.description;
+  console.log(id)
+  console.log(title)
+  console.log(description)
+  fs.rename(`data/${id}`, `data/${title}`, function (error) {
+    fs.writeFile(`data/${title}`, description, 'utf8', function (err) {
+      response.redirect(`/page/${title}`);
+    })
+  });
+
 });
 
-app.post('/delete_process', function(request,response){
+app.post('/delete_process', function (request, response) {
 
-    var post = request.body;
-    var id = post.id;
-    var filteredId = path.parse(id).base;
+  var post = request.body;
+  var id = post.id;
+  var filteredId = path.parse(id).base;
 
-    fs.unlink(`data/${filteredId}`, function(error){
-      response.redirect('/');
-    })
+  fs.unlink(`data/${filteredId}`, function (error) {
+    response.redirect('/');
+  })
 })
 
 app.listen(3000, function () {
