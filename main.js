@@ -3,8 +3,14 @@ var app = express();
 var fs = require('fs');
 var bodyParser = require('body-parser')
 var compression = require('compression');
+var helmet = require('helmet')
+app.use(helmet());
+// 이전 nodejs-m 강의에서 빼먹은 것.
+
 var topicRouter = require('./routes/topic');
 var indexRouter =require('./routes/index');
+var authRouter =require('./routes/auth');
+
 
 // /topic으로 시작하는 주소들에 대해 미들웨어 topicRouter 를 제공하겠다.
 app.use(express.static('public'));
@@ -24,8 +30,11 @@ app.get('*',function (request, response, next) {
   });
 
 })
-app.use('/topic', topicRouter);
+
 app.use('/', indexRouter);
+app.use('/topic', topicRouter);
+app.use('/auth', authRouter);
+
 
 
 app.use(function(req,res,next){
