@@ -5,6 +5,13 @@ var fs = require('fs');
 var sanitizeHtml = require('sanitize-html');
 var template = require('../lib/template');
 
+var authData = {
+   email: 'qqfelix@naver.com',
+   password: '111111',
+   nickname : 'yongdoll'
+}
+
+
 
 router.get('/login', function (request, response) {
   var title = 'WEB - login';
@@ -22,6 +29,27 @@ router.get('/login', function (request, response) {
   response.send(html);
 
 });
+  router.post('/login_process', function (request, response) {
+    console.log('hi')
+    var post = request.body;
+    var email = post.email;
+    var password = post.pwd;
+    if(email === authData.email){
+      if(password === authData.password){
+        // success
+        response.send('Welcome');
+      }
+      else{
+        response.send('Wrong password');
+
+      }
+    }
+    else{
+      response.send('WHO?');
+
+    }
+   
+  })
 
 
 // router.get('/create', function (request, response) {
