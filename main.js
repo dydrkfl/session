@@ -21,6 +21,11 @@ app.use(bodyParser.urlencoded({
 app.use(compression());
 
 app.use(session({
+  // HttpOnly : true,
+  // javascript로 접근하는 것 막음
+
+  // secure: true,
+  // https 통신했을 때만 session받을 수 있게 함.
   secret: 'asadlfkj!@#!@#dfgasdg',
   resave: false,
   saveUninitialized: true,
