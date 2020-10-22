@@ -3,13 +3,13 @@ var app = express();
 var fs = require('fs');
 var bodyParser = require('body-parser')
 var compression = require('compression');
+var session = require('express-session')
+var FileStore = require('session-file-store')(session)
+
 var helmet = require('helmet')
 app.use(helmet());
 // 이전 nodejs-m 강의에서 빼먹은 것.
 
-var topicRouter = require('./routes/topic');
-var indexRouter =require('./routes/index');
-var authRouter =require('./routes/auth');
 
 
 // /topic으로 시작하는 주소들에 대해 미들웨어 topicRouter 를 제공하겠다.
@@ -19,6 +19,15 @@ app.use(bodyParser.urlencoded({
   extended: false
 }))
 app.use(compression());
+
+app.use(session({
+  secret: 'asadlfkj!@#!@#dfgasdg',
+  resave: false,
+  saveUninitialized: true,
+  store:new FileStore()
+}))
+
+
 app.get('*',function (request, response, next) {
   // * : 모든요청 / 만약 그냥 app.use로 썼다면 post 방식에 대해서도 작동하므로 비효율적임.
 
@@ -30,6 +39,10 @@ app.get('*',function (request, response, next) {
   });
 
 })
+
+var topicRouter = require('./routes/topic');
+var indexRouter =require('./routes/index');
+var authRouter =require('./routes/auth');
 
 app.use('/', indexRouter);
 app.use('/topic', topicRouter);
